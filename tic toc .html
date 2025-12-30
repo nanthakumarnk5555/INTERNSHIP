@@ -1,0 +1,201 @@
+<!-- Task-03: Advanced UX Tic Tac Toe with Mode Selection -->
+<!-- HTML + CSS + JavaScript | Gaming-style UI -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UX Tic Tac Toe Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#020617,#0f172a);color:#e5e7eb;}
+
+    .screen{display:none;text-align:center;background:#020617;padding:30px;border-radius:25px;width:350px;box-shadow:0 25px 60px rgba(0,0,0,0.6);}
+    .screen.active{display:block;}
+
+    h1{color:#38bdf8;margin-bottom:15px;}
+
+    input{
+      width:100%;padding:12px;margin-bottom:15px;border-radius:20px;border:none;outline:none;text-align:center;
+    }
+
+    .mode-btns button, .screen button{
+      width:100%;padding:12px;margin-top:10px;border:none;border-radius:30px;
+      background:#38bdf8;color:#020617;font-weight:600;cursor:pointer;
+    }
+
+    /* GAME UI */
+    .wrapper{display:flex;gap:12px;align-items:center;}
+
+    .player-panel{background:#020617;padding:16px;border-radius:18px;width:150px;text-align:center;border:2px solid transparent;}
+    .player-panel.active{border-color:#38bdf8;transform:scale(1.05);}    
+    .player-panel h2{color:#38bdf8;margin-bottom:10px;}
+    .trophy{font-size:40px;display:none;}
+    .player-panel.win .trophy{display:block;}
+
+    /* CONFETTI */
+    .confetti{
+      position:fixed;
+      top:0;
+      width:10px;
+      height:10px;
+      background:randomColor;
+      animation:fall 3s linear infinite;
+    }
+
+    @keyframes fall{
+      0%{transform:translateY(-10px) rotate(0deg);opacity:1;}
+      100%{transform:translateY(100vh) rotate(360deg);opacity:0;}
+    }
+    .player-panel.win .trophy{display:block;}
+
+    .game-container{background:#020617;padding:20px;border-radius:22px;width:280px;text-align:center;}
+    .status{margin:10px 0;color:#9ca3af;}
+
+    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;}
+    .cell{height:75px;font-size:2.2rem;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#0f172a;cursor:pointer;}
+    .cell.X{color:#22c55e;} .cell.O{color:#facc15;}
+  </style>
+</head>
+<body>
+
+<!-- FRONT SCREEN -->
+<div class="screen active" id="startScreen">
+  <h1>🎮 Tic Tac Toe</h1>
+  <input type="text" id="playerName" placeholder="Enter Your Gaming Name" />
+
+  <div class="mode-btns">
+    <button onclick="startGame('pvp')">Player vs Player</button>
+    <button onclick="startGame('cpu')">Player vs Machine</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="gameScreen">
+  <div class="wrapper">
+
+    <div class="player-panel active" id="playerX">
+      <h2 id="p1Name">Player 1</h2>
+      <div class="trophy">🏆</div>
+    </div>
+
+    <div class="game-container">
+      <h1>Tic Tac Toe</h1>
+      <div class="status" id="status"></div>
+
+      <div class="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+      </div>
+
+      <button onclick="resetGame()">Restart</button>
+    </div>
+
+    <div class="player-panel" id="playerO">
+      <h2 id="p2Name">Player 2</h2>
+      <div class="trophy">🏆</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const startScreen=document.getElementById('startScreen');
+  const gameScreen=document.getElementById('gameScreen');
+  const p1NameEl=document.getElementById('p1Name');
+  const p2NameEl=document.getElementById('p2Name');
+  const statusText=document.getElementById('status');
+  const cells=document.querySelectorAll('.cell');
+  const playerX=document.getElementById('playerX');
+  const playerO=document.getElementById('playerO');
+
+  let board=Array(9).fill('');
+  let currentPlayer='X';
+  let gameActive=true;
+  let mode='pvp';
+
+  const winConditions=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  function startGame(selectedMode){
+    const name=document.getElementById('playerName').value || 'Player 1';
+    mode=selectedMode;
+    p1NameEl.textContent=name+' (X)';
+    p2NameEl.textContent= mode==='cpu' ? 'Machine (O)' : 'Player 2 (O)';
+    statusText.textContent=name+" Turn";
+    startScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+  }
+
+  cells.forEach(c=>c.addEventListener('click',()=>handleClick(c)));
+
+  function handleClick(cell){
+    const i=cell.dataset.index;
+    if(board[i]||!gameActive) return;
+    board[i]=currentPlayer;
+    cell.textContent=currentPlayer;
+    cell.classList.add(currentPlayer);
+    if(checkWinner()) return;
+    switchTurn();
+    if(mode==='cpu' && currentPlayer==='O') cpuMove();
+  }
+
+  function cpuMove(){
+    const empty=board.map((v,i)=>v===''?i:null).filter(v=>v!==null);
+    const move=empty[Math.floor(Math.random()*empty.length)];
+    setTimeout(()=>cells[move].click(),500);
+  }
+
+  function checkWinner(){
+    for(let c of winConditions){
+      const[a,b,d]=c;
+      if(board[a]&&board[a]===board[b]&&board[a]===board[d]){
+        gameActive=false;
+        (currentPlayer==='X'?playerX:playerO).classList.add('win');
+        statusText.textContent=(currentPlayer==='X'?p1NameEl.textContent:p2NameEl.textContent)+' Wins!';
+        launchConfetti(currentPlayer==='X'? 'left':'right');
+        return true;
+      }
+    }
+    if(!board.includes('')){statusText.textContent='Draw Match';gameActive=false;return true;}
+    return false;
+  }
+
+  function switchTurn(){
+    currentPlayer=currentPlayer==='X'?'O':'X';
+    playerX.classList.toggle('active',currentPlayer==='X');
+    playerO.classList.toggle('active',currentPlayer==='O');
+    statusText.textContent=currentPlayer==='X'?p1NameEl.textContent+' Turn':p2NameEl.textContent+' Turn';
+  }
+
+  function resetGame(){
+    board.fill('');gameActive=true;currentPlayer='X';
+    cells.forEach(c=>{c.textContent='';c.classList.remove('X','O');});
+    playerX.classList.remove('win');playerO.classList.remove('win');
+    playerX.classList.add('active');playerO.classList.remove('active');
+    statusText.textContent=p1NameEl.textContent+' Turn';
+  }
+  function launchConfetti(side){
+    for(let i=0;i<40;i++){
+      const conf=document.createElement('div');
+      conf.classList.add('confetti');
+      conf.style.left = side==='left' ? Math.random()*30+'vw' : 70+Math.random()*30+'vw';
+      conf.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`;
+      conf.style.animationDuration = 2 + Math.random()*2 + 's';
+      document.body.appendChild(conf);
+      setTimeout(()=>conf.remove(),4000);
+    }
+  }
+</script>
+
+</body>
+</html>
