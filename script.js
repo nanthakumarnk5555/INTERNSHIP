@@ -1,57 +1,44 @@
-// Mobile menu toggle
-const mobileToggle = document.getElementById('mobile-toggle');
-const navMenu = document.getElementById('nav-menu');
-const header = document.getElementById('header');
+let timer = null;
+let seconds = 0, minutes = 0, hours = 0;
 
-mobileToggle.addEventListener('click', () => {
-    navMenu.classList.toggle('active');
-    const icon = mobileToggle.querySelector('i');
-    icon.classList.toggle('ri-menu-line');
-    icon.classList.toggle('ri-close-line');
-});
+const display = document.getElementById("display");
+const laps = document.getElementById("laps");
 
-// Close mobile menu when clicking link
-document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', () => {
-        navMenu.classList.remove('active');
-        const icon = mobileToggle.querySelector('i');
-        icon.classList.add('ri-menu-line');
-        icon.classList.remove('ri-close-line');
-    });
-});
+document.getElementById("startBtn").onclick = start;
+document.getElementById("pauseBtn").onclick = pause;
+document.getElementById("resetBtn").onclick = reset;
+document.getElementById("lapBtn").onclick = lap;
 
-// Fixed navbar on scroll
-window.addEventListener('scroll', () => {
-    if (window.scrollY > 100) {
-        header.style.background = 'rgba(255, 255, 255, 0.95)';
-        header.style.backdropFilter = 'blur(10px)';
-    } else {
-        header.style.background = '#fff';
-        header.style.backdropFilter = 'none';
-    }
-});
-// Get Started button functionality
-document.querySelector('.cta-btn').addEventListener('click', function() {
-    // Features section-க்கு scroll பண்ணும்
-    document.getElementById('features').scrollIntoView({ 
-        behavior: 'smooth' 
-    });
-});
-
-function scrollToFeatures() {
-    document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+function updateDisplay(){
+  display.innerText =
+    `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
 }
 
-function scrollToContact() {
-    document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+function start(){
+  if(timer !== null) return;
+  timer = setInterval(() => {
+    seconds++;
+    if(seconds === 60){ seconds = 0; minutes++; }
+    if(minutes === 60){ minutes = 0; hours++; }
+    updateDisplay();
+  }, 1000);
 }
 
+function pause(){
+  clearInterval(timer);
+  timer = null;
+}
 
-// Smooth scrolling for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        target.scrollIntoView({ behavior: 'smooth' });
-    });
-});
+function reset(){
+  pause();
+  seconds = minutes = hours = 0;
+  updateDisplay();
+  laps.innerHTML = "";
+}
+
+function lap(){
+  if(timer === null) return;
+  const li = document.createElement("li");
+  li.innerText = display.innerText;
+  laps.appendChild(li);
+}
